@@ -1,0 +1,157 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: AWS CW.
+             Create aws linux 2 instance,
+             provisioned with apache, php7.3, mysql, npm.
+             Create Application Load Balancer for prev instance.
+
+Parameters:
+    InstanceStorageSize:
+      Description: Size of instance's ssd storage
+      Type: Number
+      Default: 8
+      AllowedValues: [8, 16, 32, 64, 128, 256]
+
+    KeyName:
+      Description: An existing EC2 KeyPair to enable SSH access to the instance
+      Type: AWS::EC2::KeyPair::KeyName
+      ConstraintDescription: Must be the name of an existing EC2 KeyPair.
+
+    EnablePublicIP:
+      Description: Status of instance's public IP
+      Type: String
+      Default: true
+      AllowedValues: [true, false]
+
+    VPCReference:
+      Description: VPC for instance to be reffered with
+      Type: AWS::EC2::VPC::Id
+
+    LBSubnetList:
+      Description: List of subnets to be associated with load balancer
+      Type: List<AWS::EC2::Subnet::Id>
+
+    InstanceSubnetId:
+      Description: Subnet to be associated with instance
+      Type: AWS::EC2::Subnet::Id
+
+    InstanceName:
+      Description: Name of the EC2 instance
+      Type: String
+      Default: cw-instance
+
+Resources:
+  # Create security group for balancer and instance
+  LBSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: cw-lb-sg
+      GroupDescription: Allow incoming HTTP from anywhere.
+      VpcId: !Ref VPCReference
+
+  LBSecurityGroupInboundRule1:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      Description: Allow incoming HTTP from anywhere.
+      GroupId: !GetAtt LBSecurityGroup.GroupId
+      IpProtocol: tcp
+      FromPort: 80
+      ToPort: 80
+      CidrIp: 0.0.0.0/0
+
+  WebSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: cw-web-sg
+      GroupDescription: Allow incoming HTTP from load balancer.
+      VpcId: !Ref VPCReference
+
+  WebSecurityGroupInboundRule1:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      Description: Allow incoming HTTP from load balancer.
+      GroupId: !GetAtt WebSecurityGroup.GroupId
+      IpProtocol: tcp
+      FromPort: 80
+      ToPort: 80
+      SourceSecurityGroupId: !GetAtt LBSecurityGroup.GroupId
+
+  WebSecurityGroupInboundRule2:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      Description: Gatsby check.
+      GroupId: !GetAtt WebSecurityGroup.GroupId
+      IpProtocol: tcp
+      FromPort: 8000
+      ToPort: 8000
+      CidrIp: 0.0.0.0/0
+
+  # Create EC2 instance
+  CWInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      KeyName: !Ref KeyName
+      ImageId: ami-01a01282197ab5b75
+      InstanceType: t2.micro
+      Monitoring: false
+      BlockDeviceMappings: 
+      - DeviceName: /dev/xvda
+        Ebs: 
+          VolumeType: gp2
+          DeleteOnTermination: true
+          VolumeSize: !Ref InstanceStorageSize
+      NetworkInterfaces: 
+      - AssociatePublicIpAddress: !Ref EnablePublicIP
+        DeviceIndex: 0
+        SubnetId: !Ref InstanceSubnetId
+        GroupSet: [ !GetAtt WebSecurityGroup.GroupId ]
+      Tags:
+        - Key: Name
+          Value: !Ref InstanceName
+      UserData: 
+          Fn::Base64: !Sub |
+            #!/bin/bash -ex
+            yum install -y telnet
+            yum install -y git
+            npm install -y --global gatsby-cli
+            gatsby new my-hello-world-starter https://github.com/gatsbyjs/gatsby-starter-hello-world
+            cd my-hello-world-starter/
+            gatsby develop -H 0.0.0.0
+
+  # Create Application Load balancer
+  ApplicationLoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: cw-lb
+      Subnets: !Ref LBSubnetList
+      SecurityGroups: [ !GetAtt LBSecurityGroup.GroupId ]
+
+  LoadBalancerListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref ApplicationLoadBalancer
+      Port: 80
+      Protocol: HTTP
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref LoadBalancerTargetGroup
+
+  LoadBalancerTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: cw-lb-tg
+      VpcId: !Ref VPCReference
+      Targets:
+      - Id: !Ref CWInstance
+      Port: 80
+      Protocol: HTTP
+      
+
+Outputs:
+  InstancePublicIP:
+    Description: Public IP associated with created instance
+    Value: !GetAtt CWInstance.PublicIp
+
+  LoadBalancerDNS:
+    Description: DNS of the created load balancer
+    Value: !GetAtt ApplicationLoadBalancer.DNSName
