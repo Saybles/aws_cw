@@ -1,0 +1,9 @@
+---
+- name: Add nodejs/npm remote source
+  shell:
+    cmd: curl -sL https://rpm.nodesource.com/setup_10.x | sudo bash -
+
+- name: Install nodejs/npm
+  yum:
+    name: nodejs
+    state: present

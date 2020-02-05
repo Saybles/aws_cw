@@ -1,0 +1,15 @@
+---
+- name: Install apache
+  yum:
+    name: httpd
+    state: latest
+
+- name: Start apache, if not started
+  service:
+    name: httpd
+    state: started
+
+- name: Enable apache start on boot
+  service:
+    name: httpd
+    enabled: yes

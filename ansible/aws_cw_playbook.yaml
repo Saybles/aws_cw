@@ -1,0 +1,11 @@
+---
+- name: Perform aws instance provision
+  hosts: all
+  become: yes
+
+
+  roles:
+    - apache
+    - php
+    - mysql
+    - npm
