@@ -76,16 +76,6 @@ Resources:
       ToPort: 80
       SourceSecurityGroupId: !GetAtt LBSecurityGroup.GroupId
 
-  # WebSecurityGroupInboundRule2:
-  #   Type: AWS::EC2::SecurityGroupIngress
-  #   Properties:
-  #     Description: Gatsby check.
-  #     GroupId: !GetAtt WebSecurityGroup.GroupId
-  #     IpProtocol: tcp
-  #     FromPort: 8000
-  #     ToPort: 8000
-  #     CidrIp: 0.0.0.0/0
-
   # Create EC2 instance
   CWInstance:
     Type: AWS::EC2::Instance
