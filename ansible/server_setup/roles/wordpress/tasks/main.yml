@@ -1,0 +1,58 @@
+---
+- name: Create mysql wp database
+  mysql_db:
+    login_user: root
+    login_password: "{{ mysql_root_password }}"
+    name: "{{ wp_dbname }}"
+    state: present
+
+- name: Create mysql wp user
+  mysql_user:
+    login_user: root
+    login_password: "{{ mysql_root_password }}"
+    name: "{{ wp_username }}"
+    password: "{{ mysql_wpuser_password }}"
+    priv: "{{ wp_dbname }}.*:ALL"
+    state: present
+
+- name: Create /var/www/wordpress.com/public_html dir
+  file:
+    path: /var/www/wordpress.com/public_html
+    state: directory
+
+- name: Install Wordpress
+  shell:
+    cmd: |
+      wget https://wordpress.org/latest.tar.gz
+      tar xvfz latest.tar.gz
+      cp -a wordpress/. /var/www/wordpress.com/public_html
+
+- name: Setup wordpress config
+  template:
+    src: wp-config.php.j2 
+    dest: /var/www/wordpress.com/wp-config.php
+
+- name: Create /etc/httpd/sites-available dir
+  file:
+    path: /etc/httpd/sites-available
+    state: directory
+
+- name: Create /etc/httpd/sites-enabled dir
+  file:
+    path: /etc/httpd/sites-enabled
+    state: directory
+
+- name: Make apache conf for wordpress site
+  template:
+    src: wordpress.com.conf
+    dest: /etc/httpd/sites-available/wordpress.com.conf
+
+- name: Enable wordpress site with apache
+  file:
+    src: /etc/httpd/sites-available/wordpress.com.conf 
+    dest: /etc/httpd/sites-enabled/wordpress.com.conf
+    state: link
+  
+- name: Setup hosts file for gatsby site
+  shell:
+    cmd: echo "127.0.0.1 wordpress.com" >> /etc/hosts

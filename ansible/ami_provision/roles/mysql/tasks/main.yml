@@ -1,0 +1,35 @@
+---
+- name: Install mysql
+  yum:
+    name: mariadb-server
+    state: present
+
+- name: Start mysql, if not started
+  service:
+    name: mariadb
+    state: started
+
+- name: Enable mysql start on boot
+  service:
+    name: mariadb
+    enabled: yes
+
+- block:
+  - name: Install pip
+    shell:
+      cmd: |
+        curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
+        python get-pip.py
+
+  - name: Install PyMySQL module for python
+    pip:
+      name: PyMySQL
+
+  - name: Set mysql root user
+    mysql_user:
+      login_user: root
+      name: root
+      host: localhost
+      password: "{{ mysql_root_password }}"
+      check_implicit_admin: yes
+      state: present

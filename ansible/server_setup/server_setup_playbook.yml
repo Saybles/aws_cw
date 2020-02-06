@@ -1,0 +1,26 @@
+---
+- name: Perform aws instance server setup
+  hosts: all
+  become: yes
+
+  vars:
+    host: ec2-52-15-230-136.us-east-2.compute.amazonaws.com
+    user: ec2-user
+    ssh_key_path: ~/dev/.ssh/UzkyDevOpsAWS.pem
+
+    wp_username: wpuser
+    wp_dbname: wpdb
+
+  roles:
+    - wordpress
+    - gatsby
+
+  tasks:
+    - name: Configurate apache
+      shell:
+        cmd: echo "IncludeOptional sites-enabled/*.conf" >> /etc/httpd/conf/httpd.conf
+
+    - name: Restart apache
+      service:
+        name: httpd
+        state: restarted

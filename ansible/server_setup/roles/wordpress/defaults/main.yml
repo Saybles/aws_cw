@@ -1,0 +1,7 @@
+---
+# host: ec2-52-15-202-208.us-east-2.compute.amazonaws.com
+# user: ec2-user
+# ssh_key_path: ~/dev/.ssh/UzkyDevOpsAWS.pem
+
+# wp_username: wpuser
+# wp_dbname: wpdb

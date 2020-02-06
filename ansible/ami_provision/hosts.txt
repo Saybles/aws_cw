@@ -1,0 +1,2 @@
+[aws_servers]
+aws_cw ansible_host="{{ host }}" ansible_user="{{ user }}" ansible_ssh_private_key_file="{{ ssh_key_path }}"

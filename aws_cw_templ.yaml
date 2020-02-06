@@ -76,22 +76,22 @@ Resources:
       ToPort: 80
       SourceSecurityGroupId: !GetAtt LBSecurityGroup.GroupId
 
-  WebSecurityGroupInboundRule2:
-    Type: AWS::EC2::SecurityGroupIngress
-    Properties:
-      Description: Gatsby check.
-      GroupId: !GetAtt WebSecurityGroup.GroupId
-      IpProtocol: tcp
-      FromPort: 8000
-      ToPort: 8000
-      CidrIp: 0.0.0.0/0
+  # WebSecurityGroupInboundRule2:
+  #   Type: AWS::EC2::SecurityGroupIngress
+  #   Properties:
+  #     Description: Gatsby check.
+  #     GroupId: !GetAtt WebSecurityGroup.GroupId
+  #     IpProtocol: tcp
+  #     FromPort: 8000
+  #     ToPort: 8000
+  #     CidrIp: 0.0.0.0/0
 
   # Create EC2 instance
   CWInstance:
     Type: AWS::EC2::Instance
     Properties:
       KeyName: !Ref KeyName
-      ImageId: ami-01a01282197ab5b75
+      ImageId: ami-0863f6bc2fcd5706b
       InstanceType: t2.micro
       Monitoring: false
       BlockDeviceMappings: 
@@ -108,15 +108,6 @@ Resources:
       Tags:
         - Key: Name
           Value: !Ref InstanceName
-      UserData: 
-          Fn::Base64: !Sub |
-            #!/bin/bash -ex
-            yum install -y telnet
-            yum install -y git
-            npm install -y --global gatsby-cli
-            gatsby new my-hello-world-starter https://github.com/gatsbyjs/gatsby-starter-hello-world
-            cd my-hello-world-starter/
-            gatsby develop -H 0.0.0.0
 
   # Create Application Load balancer
   ApplicationLoadBalancer:

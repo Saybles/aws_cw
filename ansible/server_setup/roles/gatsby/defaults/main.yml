@@ -1,0 +1,4 @@
+---
+# host: ec2-3-135-191-83.us-east-2.compute.amazonaws.com
+# user: ec2-user
+# ssh_key_path: ~/dev/.ssh/UzkyDevOpsAWS.pem

@@ -1,0 +1,46 @@
+---
+- name: Install gatsby
+  shell:
+    cmd: npm install -g gatsby-cli
+
+- name: Install git
+  yum:
+    name: git
+
+- name: Create /var/www/gatsby.com/public_html dir
+  file:
+    path: /var/www/gatsby.com/public_html
+    state: directory
+
+- name: Install Gatsby's hello-world starter
+  shell:
+    cmd: |
+      gatsby new my-hello-world https://github.com/gatsbyjs/gatsby-starter-hello-world
+      cd my-hello-world/
+      gatsby build
+      cp -a public/. /var/www/gatsby.com/public_html
+
+- name: Create /etc/httpd/sites-available dir
+  file:
+    path: /etc/httpd/sites-available
+    state: directory
+
+- name: Create /etc/httpd/sites-enabled dir
+  file:
+    path: /etc/httpd/sites-enabled
+    state: directory
+
+- name: Make apache conf for gatsby site
+  template:
+    src: gatsby.com.conf
+    dest: /etc/httpd/sites-available/gatsby.com.conf
+
+- name: Enable gatsby site with apache
+  file:
+    src: /etc/httpd/sites-available/gatsby.com.conf 
+    dest: /etc/httpd/sites-enabled/gatsby.com.conf
+    state: link
+  
+- name: Setup hosts file for gatsby site
+  shell:
+    cmd: echo "127.0.0.1 gatsby.com" >> /etc/hosts
