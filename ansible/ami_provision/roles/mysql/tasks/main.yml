@@ -3,8 +3,8 @@
   shell:
     cmd: |
       wget https://dev.mysql.com/get/mysql80-community-release-el7-3.noarch.rpm
-      yum localinstall mysql80-community-release-el7-3.noarch.rpm
-      yum install mysql-community-server
+      yum localinstall -y mysql80-community-release-el7-3.noarch.rpm
+      yum install -y mysql-community-server
 
 - name: Start mysql, if not started
   service:
@@ -27,12 +27,17 @@
     pip:
       name: PyMySQL
 
+  - shell: "grep -oP '(?<=root@localhost: ).*' /var/log/mysqld.log"
+    register: get_mysql_tmp_pass
+
+  - set_fact:
+      mysql_tmp_pass: "{{ get_mysql_tmp_pass.stdout }}"
+
   - name: Set mysql root user
     mysql_user:
-      login_user: root
-      login_password: "{{ get_mysql_tmp_pass.stdout }}"
+      login_user: "root"
+      login_password: "{{ mysql_tmp_pass }}"
       name: root
-      host: localhost
       password: "{{ mysql_root_password }}"
       check_implicit_admin: yes
       state: present
