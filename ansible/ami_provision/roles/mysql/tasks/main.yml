@@ -1,17 +1,19 @@
 ---
 - name: Install mysql
-  yum:
-    name: mariadb-server
-    state: present
+  shell:
+    cmd: |
+      wget https://dev.mysql.com/get/mysql80-community-release-el7-3.noarch.rpm
+      yum localinstall mysql80-community-release-el7-3.noarch.rpm
+      yum install mysql-community-server
 
 - name: Start mysql, if not started
   service:
-    name: mariadb
+    name: mysqld
     state: started
 
 - name: Enable mysql start on boot
   service:
-    name: mariadb
+    name: mysqld
     enabled: yes
 
 - block:
@@ -28,6 +30,7 @@
   - name: Set mysql root user
     mysql_user:
       login_user: root
+      login_password: "{{ get_mysql_tmp_pass.stdout }}"
       name: root
       host: localhost
       password: "{{ mysql_root_password }}"

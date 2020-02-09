@@ -3,3 +3,6 @@
   service: 
     name: mysqld
     state: restarted
+
+- shell: "cat /var/log/mysqld.log | grep -oP '(?<=root@localhost: ).*'"
+  register: get_mysql_tmp_pass
