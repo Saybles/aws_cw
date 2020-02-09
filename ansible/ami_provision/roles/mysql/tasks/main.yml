@@ -1,15 +1,32 @@
 ---
-- name: Install mysql
+- name: Delete mariadb
+  yum:
+    name: mariadb-libs
+    state: removed
+
+- name: Install mysql repo
   shell:
     cmd: |
       wget https://dev.mysql.com/get/mysql80-community-release-el7-3.noarch.rpm
       yum localinstall -y mysql80-community-release-el7-3.noarch.rpm
-      yum install -y mysql-community-server
 
-- name: Start mysql, if not started
+- name: Install mysql
+  yum:
+    name: mysql-community-server
+  with_items:
+    - mysql-community-devel
+    - MySQL-python
+
+- name: Copy my.cnf
+  template:
+    src: my.cnf
+    dest: /etc/my.cnf
+    mode: 0644
+
+- name: Restart mysql
   service:
     name: mysqld
-    state: started
+    state: restarted
 
 - name: Enable mysql start on boot
   service:
@@ -27,17 +44,14 @@
     pip:
       name: PyMySQL
 
-  - shell: "grep -oP '(?<=root@localhost: ).*' /var/log/mysqld.log"
+  - name: Get mysql root tmp password
+    shell: "grep -oP '(?<=root@localhost: ).*' /var/log/mysqld.log"
     register: get_mysql_tmp_pass
 
-  - set_fact:
-      mysql_tmp_pass: "{{ get_mysql_tmp_pass.stdout }}"
-
   - name: Set mysql root user
-    mysql_user:
-      login_user: "root"
-      login_password: "{{ mysql_tmp_pass }}"
-      name: root
-      password: "{{ mysql_root_password }}"
-      check_implicit_admin: yes
-      state: present
+    command: |
+      mysql --user root \
+            --password={{ get_mysql_tmp_pass.stdout }} 
+            --connect-expired-password 
+            --execute="ALTER USER 'root'@'localhost' \
+                       IDENTIFIED BY '{{ mysql_root_password }}';"

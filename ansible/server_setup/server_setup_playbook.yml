@@ -4,7 +4,7 @@
   become: yes
 
   vars:
-    host: ec2-18-189-192-2.us-east-2.compute.amazonaws.com
+    host: ec2-18-188-253-39.us-east-2.compute.amazonaws.com
     user: ec2-user
     ssh_key_path: ~/dev/.ssh/UzkyDevOpsAWS.pem
 
